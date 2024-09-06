@@ -1,0 +1,71 @@
+# User-specific files
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Auto-generated files
+Generated\
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+*.log
+
+# .NET Core related
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+$RECYCLE.BIN/
+
+# Recycle Bin used on file shares
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+*.symbols.nupkg
+.nuget/
+packages/
+!packages/*.md
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NPM (Node.js) files
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# WebAssembly builds
+wwwroot/
+
+# Rider files
+.idea/
+.idea_modules/
+*.iml
+
+# JetBrains Rider-specific files
+.idea/
+
+# MacOS related files
+.DS_Store
