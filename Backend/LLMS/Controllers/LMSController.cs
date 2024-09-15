@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LLMS.Controllers
 {
@@ -9,31 +12,56 @@ namespace LLMS.Controllers
     [Route("[controller]")]
     public class LMSController : ControllerBase
     {
-        List<Admin> admindata = new List<Admin>() { new Admin { id = 1, name = "shaik",email="abcd1@gmail.com", password = "abcd1234" } };
-        List<Book> bookdata = new List<Book>() {
-            new Book { id = 1, btitle="Test", bcatag ="Cat1",bauthor="Test", bcopies=3,bpub = "T",pubname="TT",bisbn="",bdate= DateTime.Now,bstatus="Old" },
-            new Book { id = 2, btitle="Test2", bcatag ="Cat2",bauthor="Test", bcopies=3,bpub = "T",pubname="TT",bisbn="",bdate= DateTime.Now,bstatus="Old" },
-            new Book { id = 3, btitle="Test3", bcatag ="Cat3",bauthor="Test", bcopies=3,bpub = "T",pubname="TT",bisbn="",bdate= DateTime.Now,bstatus="true0" },
-            new Book { id = 4, btitle="Test4", bcatag ="Cat4",bauthor="Test", bcopies=3,bpub = "T",pubname="TT",bisbn="",bdate= DateTime.Now,bstatus="true0" }
-        };
+        List<Admin> admindata = new();
+        List<Book> bookdata = new();
         // GET: Admin
-        List<Members> memberdata = new List<Members>() { new Members() {
-                id = 1,
-                uname = "tmp",
-                uadmid = 21,
-                umail = "abcd@gmail.com",
-                udep = "admin",
-                upassword = "abcd1234",
-                ustatus = 1,
-                urecstatus = 1,
-                urecj ="",
-                ureqj = ""
-            } };
-
+        List<Members> memberdata = new();
         
         public LMSController()
         {
-           
+            Init();
+
+        }
+
+        public void Init()
+        {
+            using (StreamReader r = new StreamReader("Data\\AdminData.json"))
+            {
+                string json = r.ReadToEnd();
+                admindata =  JsonSerializer.Deserialize<List<Admin>>(json);
+            }
+            using (StreamReader r = new StreamReader("Data\\BooksData.json"))
+            {
+                string json = r.ReadToEnd();
+                bookdata = JsonSerializer.Deserialize<List<Book>>(json);
+            }
+            using (StreamReader r = new StreamReader("Data\\MembersData.json"))
+            {
+                string json = r.ReadToEnd();
+                memberdata = JsonSerializer.Deserialize<List<Members>>(json);
+            }
+        }
+
+        public void UpdateData(dynamic data, Datainfo info)
+        {
+            string json = JsonSerializer.Serialize(data);
+            //write string to file
+            switch (info)
+            {
+                case Datainfo.Admin:
+                    System.IO.File.WriteAllText(@"Data\\AdminData.json", json);
+                    break;
+                case Datainfo.Member:
+                    System.IO.File.WriteAllText(@"Data\\MembersData.json", json);
+                    break;
+                case Datainfo.Book:
+                    System.IO.File.WriteAllText(@"Data\\BooksData.json", json);
+                    break;
+                default:
+                    Console.WriteLine("No need to update data.");
+                    break;
+            }
+            Init();
         }
 
 
@@ -43,11 +71,8 @@ namespace LLMS.Controllers
 
 
 
-
-
-
         [HttpGet("members")]
-        public ActionResult<List<Members>> Get([FromQuery] int ustatus, [FromQuery] int urecstatus)
+        public ActionResult<List<Members>> Get([FromQuery] int? ustatus, [FromQuery] int? urecstatus)
         {
             if(ustatus ==1 )
             return Ok(memberdata.Where(x=> x.ustatus == ustatus).ToList());
@@ -68,14 +93,11 @@ namespace LLMS.Controllers
             var product = memberdata.Where(m => m.id == id).FirstOrDefault();
             if (product == null)
                 return NotFound();
-            //var reclst = bookdata.Where(x => x.id % 2 == 0).Select(x => x).ToList();
-           // var reqlst = bookdata.Where(x => x.id % 2 == 1).Select(x => x).ToList();
-            //product.urecj = JsonSerializer.Serialize(reclst);
-           // product.ureqj = JsonSerializer.Serialize(reqlst);
+            
             return Ok(product);
         }
-        [HttpPut("members/{id}")]
-        public async Task<IActionResult> Get(Members curr)
+        [HttpPost("members/{id}")]
+        public async Task<IActionResult> PostMember([FromBody]Members curr)
         {
             if (memberdata == null) return BadRequest();
             var index = memberdata.FindIndex(b => b.id == curr.id);
@@ -84,6 +106,7 @@ namespace LLMS.Controllers
                 // Replace the "Banana" fruit with a new "Blueberry" fruit
                 memberdata[index] = curr;
             }
+            UpdateData(memberdata, Datainfo.Member);
             return Ok(memberdata[index]);
         }
         [HttpDelete("members/{id}")]
@@ -92,18 +115,40 @@ namespace LLMS.Controllers
             var member = memberdata.Where(x => x.id == id).FirstOrDefault();
 
             memberdata.Remove(member);
+            UpdateData(memberdata, Datainfo.Member);
+            return Ok(member);
+        }
+        [HttpPost("members")]
+        public async Task<IActionResult> PostNewMember([FromBody] Members member)
+        {
+            int accno = new Random().Next(1, 1000);
+            member.id = accno;
+            memberdata.Add(member);
+            UpdateData(memberdata, Datainfo.Member);
             return Ok(member);
         }
         [HttpPut("members/{id}")]
-        public async Task<IActionResult> updateMember(int id, Members _mem)
+        public IActionResult updateMember(int id,[FromBody] Members _mem)
         {
             if (_mem == null) return BadRequest();
             var index = memberdata.FindIndex(b => b.id == _mem.id);
             if (index != -1)
             {
                 // Replace the "Banana" fruit with a new "Blueberry" fruit
-                memberdata[index] = _mem;
+                memberdata[index] = new Members() { 
+                        id = _mem.id,
+                    uname = _mem.uname,
+                    uadmid = _mem.uadmid,
+                    umail = _mem.umail,
+                    udep = _mem.udep,
+                    upassword = _mem.upassword,
+                    ustatus = _mem.ustatus,
+                    urecstatus = _mem.urecstatus,
+                    ureqj = _mem.ureqj,
+                    urecj = _mem.urecj
+                };
             }
+            UpdateData(memberdata, Datainfo.Member);
             return Ok(_mem);
         }
 
@@ -135,8 +180,13 @@ namespace LLMS.Controllers
             return Ok(product);
         }
 
+
+
+
+
+
         [HttpGet("books")]
-        public ActionResult<List<Book>> GetAllbooks([FromQuery] string bstatus)
+        public ActionResult<List<Book>> GetAllbooks([FromQuery] string? bstatus)
         {
             if(string.IsNullOrEmpty(bstatus))
             return Ok(bookdata);
@@ -155,7 +205,7 @@ namespace LLMS.Controllers
             return Ok(product);
         }
         [HttpPut("books/{id}")]
-        public async Task<IActionResult> updateBook(int id,Book _book)
+        public async Task<IActionResult> updateBook(int id,[FromBody]Book _book)
         {
             if (_book == null) return BadRequest();
             var index = bookdata.FindIndex(b => b.id == _book.id);
@@ -164,13 +214,19 @@ namespace LLMS.Controllers
                 // Replace the "Banana" fruit with a new "Blueberry" fruit
                 bookdata[index] = _book;
             }
+            UpdateData(bookdata, Datainfo.Book);
+
             return Ok(bookdata[index]);
         }
         [HttpPost("books")]
-        public async Task<IActionResult> putBook( Book _book)
+        public async Task<IActionResult> putBook([FromBody] Book _book)
         {
             if (_book == null) return BadRequest();
+            int accno = new Random().Next(1, 1000);
+            _book.id = accno;
             bookdata.Add(_book);
+            UpdateData(bookdata, Datainfo.Book);
+
             return Ok(_book);
         }
         [HttpDelete("books/{id}")]
@@ -179,6 +235,7 @@ namespace LLMS.Controllers
             var book = bookdata.Where(x => x.id == id).FirstOrDefault();
 
             bookdata.Remove(book);
+            UpdateData(bookdata, Datainfo.Book);
             return Ok();
         }
 
