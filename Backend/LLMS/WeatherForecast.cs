@@ -51,4 +51,10 @@ namespace LLMS
 
 
     }
+
+    public enum  Datainfo
+    {
+        Member,Admin,Book
+    }
+    public enum Color { Red, Green, Blue, Black, Orange }
 }
